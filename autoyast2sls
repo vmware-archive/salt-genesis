@@ -1,0 +1,19 @@
+#!/usr/bin/env python2
+
+import shlex
+import argparse
+import xmltodict
+import pprint
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--in', dest='in', action='store')
+parser.add_argument('--out', dest='out', action='store')
+args = vars(parser.parse_args())
+
+f = open(args['in'], 'r')
+ps_opts = xmltodict.parse(f.read())
+
+#pprint.pprint(ps_opts)
+
+print(ps_opts['profile']['clock']['timezone'])

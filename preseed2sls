@@ -1,0 +1,67 @@
+#!/usr/bin/env python2
+
+import yaml
+import shlex
+import argparse
+import pprint
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--in', dest='in', action='store')
+parser.add_argument('--out', dest='out', action='store')
+args = vars(parser.parse_args())
+
+f = open(args['in'], 'r')
+ps_opts = {}
+for line in f:
+    if line.startswith('#'):
+        continue
+    if not line.strip():
+        continue
+
+    comps = shlex.split(line)
+    if comps[0] not in ps_opts.keys():
+        ps_opts[comps[0]] = {}
+    cmds = comps[1].split('/')
+
+    pointer = ps_opts[comps[0]]
+    for cmd in cmds:
+        pointer = pointer.setdefault(cmd, {})
+
+    pointer['type'] = comps[2]
+    if len(comps) > 3:
+        pointer['argument'] = comps[3]
+
+pprint.pprint(ps_opts)
+
+sls = {}
+
+# Set language
+# ( This looks like it maps to something else )
+sls[ps_opts['d-i']['languagechooser']['language-name-fb']['argument']] = {
+    'locale': ['system']
+    }
+
+# Set keyboard
+# ( This looks like it maps to something else )
+sls[ps_opts['d-i']['kbd-chooser']['method']['argument']] = {
+    'keyboard': ['system']
+    }
+
+# Set timezone
+timezone = ps_opts['d-i']['time']['zone']['argument']
+sls[timezone] = {'timezone': ['system']}
+if ps_opts['d-i']['tzconfig']['gmt']['argument'] == 'true':
+    sls[timezone]['timezone'].append('utc')
+
+# Set network
+if 'netcfg' in ps_opts.keys():
+    pass
+
+if args['out'] is not None:
+    f = open(args['out'], 'w')
+    f.write(yaml.safe_dump(sls, default_flow_style=False))
+    f.close()
+else:
+    print(yaml.safe_dump(sls, default_flow_style=False))
+
