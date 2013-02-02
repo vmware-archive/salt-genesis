@@ -1,0 +1,239 @@
+<?xml version="1.0"?>
+<!DOCTYPE profile SYSTEM "/usr/share/autoinstall/dtd/profile.dtd">
+<profile xmlns="http://www.suse.com/1.0/yast2ns" xmlns:config="http://www.suse.com/1.0/configns">
+      <clock>
+        <hwclock>GMT</hwclock>
+        <timezone>US/Pacific</timezone>
+      </clock>
+      <keyboard>
+        <keymap>english-us</keymap>
+      </keyboard>
+      <language>en_US</language>
+      <mouse>
+        <id>00_ps2</id>
+      </mouse>
+  <install>
+    <bootloader>
+      <loader_type>grub</loader_type>
+      <location>mbr</location>
+    </bootloader>
+    <general>
+      <mode>
+        <confirm config:type="boolean">false</confirm>
+        <forceboot config:type="boolean">false</forceboot>
+        <reboot config:type="boolean">true</reboot>
+      </mode>
+      <signature-handling>
+        <accept_unsigned_file         config:type="boolean">true</accept_unsigned_file>
+        <accept_file_without_checksum config:type="boolean">true</accept_file_without_checksum>
+        <accept_verification_failed   config:type="boolean">true</accept_verification_failed>
+        <accept_unknown_gpg_key       config:type="boolean">true</accept_unknown_gpg_key>
+      </signature-handling>
+    </general>
+    <software>
+      <patterns config:type="list">
+        <pattern>lamp_server</pattern>
+        <pattern>laptop</pattern>
+      </patterns>
+    </software>
+    <partitioning config:type="list">
+      <drive>
+        <device>/dev/sda</device>
+        <use>all</use>
+        <initialize config:type="boolean">true</initialize>
+        <partitions config:type="list">
+          <partition>
+            <mount>/boot</mount>
+            <size>75mb</size>
+            <partition_nr config:type="integer">1</partition_nr>
+            <filesystem  config:type="symbol">ext2</filesystem>
+          </partition>
+          <partition>
+            <mount>swap</mount>
+            <size>512mb</size>
+            <filesystem  config:type="symbol">swap</filesystem>
+          </partition>
+          <partition>
+            <mount>/</mount>
+            <size>max</size>
+            <filesystem  config:type="symbol">ext3</filesystem>
+          </partition>
+        </partitions>
+     </drive>
+     </partitioning>
+  </install>
+  <configure>
+   <users config:type="list">
+      <user>
+         <username>root</username>
+         <user_password>kknBYkhJdQvmA</user_password>
+         <encrypted config:type="boolean">true</encrypted>
+         <forename/>
+         <surname/>
+      </user>
+      <user>
+         <username>myuser</username>
+         <user_password>kknBYkhJdQvmA</user_password>
+         <encrypted config:type="boolean">true</encrypted>
+         <forename>My</forename>
+         <surname>User</surname>	  	
+         <fullname>My User</fullname>
+         <home>/home/myuser</home>
+         <password_settings>
+           <expire></expire>
+           <flag></flag>
+           <inact>-1</inact>
+           <max>99999</max>
+           <min>0</min>
+           <warn>7</warn>
+         </password_settings>
+         <shell>/bin/bash</shell>
+      </user>
+    </users>
+    <networking>
+
+      <dns>
+        <dhcp_hostname config:type="boolean">false</dhcp_hostname>
+        <dhcp_resolv config:type="boolean">false</dhcp_resolv>
+        <domain>filtralia.com</domain>
+        <hostname>local</hostname>
+        <nameservers config:type="list">
+          <nameserver>8.8.8.8</nameserver>
+        </nameservers>
+        <searchlist config:type="list">
+          <search>filtralia.com</search>
+        </searchlist>
+      </dns>
+      <interfaces config:type="list">
+        <interface>
+          <bootproto>static</bootproto>
+          <broadcast>10.1.1.255</broadcast>
+          <device>eth0</device>
+          <ipaddr>10.1.1.1</ipaddr>
+          <netmask>255.255.255.0</netmask>
+          <network>10.1.1.0</network>
+          <startmode>onboot</startmode>
+        </interface>
+      </interfaces>
+      <modules config:type="list">
+        <module_entry>
+          <device>eth0</device>
+          <module></module>
+          <options></options>
+        </module_entry>
+      </modules>
+      <routing>
+        <ip_forward config:type="boolean">false</ip_forward>
+        <routes config:type="list">
+          <route>
+            <destination>default</destination>
+            <device>-</device>
+            <gateway>10.1.1.254</gateway>
+            <netmask>-</netmask>
+          </route>
+        </routes>
+      </routing>
+    </networking>
+    <scripts>
+      <pre-scripts config:type="list">
+         <script>
+	   <source>
+	   <![CDATA[ 
+# This fixes permission in /var so autoyast doesn't gag because mortal user (apache) repacked initrd. 
+chown -R root:root /var
+	   ]]>
+	   </source>
+	 </script>
+      </pre-scripts>
+      <chroot-scripts config:type="list">
+        <script>
+          <chrooted config:type="boolean">true</chrooted>
+          <filename>sax-config</filename>
+          <interpreter>shell</interpreter>
+          <location></location>
+          <source><![CDATA[#!/bin/bash
+test -x /usr/sbin/sax2 || exit 0
+/usr/sbin/sax2 --auto
+       ]]></source>
+        </script>
+        <script>
+           <filename>replay_cp</filename>
+           <chrooted config:type="boolean">false</chrooted>
+           <source>
+           <![CDATA[
+test -r /replay || exit 0 
+cp /replay /mnt/tmp/replay
+           ]]>
+           </source>
+        </script>
+        <script>
+           <chrooted config:type="boolean">true</chrooted>
+           <filename>chrooted_replay_cp</filename>
+           <source>
+           <![CDATA[
+test -r /tmp/replay || exit 0
+mkdir -p /etc/opt/LinuxCOE
+mv /tmp/replay /etc/opt/LinuxCOE
+           ]]>
+          </source>
+        </script>
+      </chroot-scripts>
+      <post-scripts config:type="list">
+        <script>
+          <filename>final</filename>
+          <interpreter>perl</interpreter>
+          <network_needed config:type="boolean">true</network_needed>
+
+          <source>
+<![CDATA[
+]]>
+          </source>
+        </script>
+        <script>
+          <filename>final-user</filename>
+          <interpreter>shell</interpreter>
+          <source>
+<![CDATA[
+            echo "AuotYaST-installed OpenSUSE 11.3 - Instalinux `/bin/date`" > /etc/motd
+echo SYSTEM=\"10.1.1.1\" >>/etc/opt/LinuxCOE/args
+echo HOSTNAME=\"local.filtralia.com\" >>/etc/opt/LinuxCOE/args
+echo IP=\"10.1.1.1\" >>/etc/opt/LinuxCOE/args
+echo METHOD=\"HTTP\" >>/etc/opt/LinuxCOE/args
+echo PROFILE=\"Custom\" >>/etc/opt/LinuxCOE/args
+echo OS=\"OpenSUSE 11.3\" >>/etc/opt/LinuxCOE/args
+echo WAYSTATION=\"suse.mirrors.tds.net\" >>/etc/opt/LinuxCOE/args
+echo NETMASK=\"255.255.255.0\" >>/etc/opt/LinuxCOE/args
+echo PART_CHOICE=\"Simple\" >>/etc/opt/LinuxCOE/args
+echo KBD=\"english-us\" >>/etc/opt/LinuxCOE/args
+echo LANG=\"en_US\" >>/etc/opt/LinuxCOE/args
+echo TIMEZONE=\"US/Pacific\" >>/etc/opt/LinuxCOE/args
+echo MOUSE=\"00_ps2\" >>/etc/opt/LinuxCOE/args
+echo GATEWAY=\"10.1.1.254\" >>/etc/opt/LinuxCOE/args
+echo NAMESVR=\"8.8.8.8\" >>/etc/opt/LinuxCOE/args
+echo UTC=\"Yes\" >>/etc/opt/LinuxCOE/args
+echo BUNDLES=\"lamp_server\" >>/etc/opt/LinuxCOE/args
+echo NETDEV=\"eth0\" >>/etc/opt/LinuxCOE/args
+echo ARCH=\"i386\" >>/etc/opt/LinuxCOE/args
+echo IMAGE=\"iso\" >>/etc/opt/LinuxCOE/args
+echo DEVICE=\"/dev/sda\" >>/etc/opt/LinuxCOE/args
+echo MOUNT0=\"/boot\" >>/etc/opt/LinuxCOE/args
+echo SIZE0=\"75mb\" >>/etc/opt/LinuxCOE/args
+echo FSTYPE0=\"ext2\" >>/etc/opt/LinuxCOE/args
+echo GROW0=\"\" >>/etc/opt/LinuxCOE/args
+echo MOUNT1=\"swap\" >>/etc/opt/LinuxCOE/args
+echo SIZE1=\"512mb\" >>/etc/opt/LinuxCOE/args
+echo FSTYPE1=\"swap\" >>/etc/opt/LinuxCOE/args
+echo GROW1=\"\" >>/etc/opt/LinuxCOE/args
+echo MOUNT2=\"/\" >>/etc/opt/LinuxCOE/args
+echo SIZE2=\"1gb\" >>/etc/opt/LinuxCOE/args
+echo FSTYPE2=\"ext3\" >>/etc/opt/LinuxCOE/args
+echo GROW2=\"YES\" >>/etc/opt/LinuxCOE/args
+echo USER_NAME=\"myuser\" >>/etc/opt/LinuxCOE/args
+echo REAL_NAME=\"My User\" >>/etc/opt/LinuxCOE/args
+]]>
+          </source>
+        </script>
+      </post-scripts>
+    </scripts>
+  </configure>
+</profile>
