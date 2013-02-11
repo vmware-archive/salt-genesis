@@ -55,8 +55,20 @@ if ps_opts['d-i']['tzconfig']['gmt']['argument'] == 'true':
     sls[timezone]['timezone'].append('utc')
 
 # Set network
-if 'netcfg' in ps_opts.keys():
-    pass
+if 'netcfg' in ps_opts['d-i'].keys():
+    iface = ps_opts['d-i']['netcfg']['choose_interface']['argument']
+    sls[iface] = {}
+    sls[iface]['enabled'] = True
+    if ps_opts['d-i']['netcfg']['confirm_static'] == 'true':
+        sls[iface]['proto'] = 'static'
+    elif ps_opts['d-i']['netcfg']['disable_dhcp'] == 'false':
+        sls[iface]['proto'] = 'dhcp'
+    sls[iface]['netmask'] = ps_opts['d-i']['netcfg']['get_netmask']['argument']
+    sls[iface]['domain'] = ps_opts['d-i']['netcfg']['get_domain']['argument']
+    sls[iface]['gateway'] = ps_opts['d-i']['netcfg']['get_gateway']['argument']
+    sls[iface]['hostname'] = ps_opts['d-i']['netcfg']['get_hostname']['argument']
+    sls[iface]['ipaddress'] = ps_opts['d-i']['netcfg']['get_ipaddress']['argument']
+    sls[iface]['nameservers'] = ps_opts['d-i']['netcfg']['get_nameservers']['argument']
 
 if args['out'] is not None:
     f = open(args['out'], 'w')
