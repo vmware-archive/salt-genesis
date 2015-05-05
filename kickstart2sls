@@ -125,6 +125,7 @@ def parse_bootloader(rule):
     parser.add_argument('--md5pass', dest='md5pass', action='store')
     parser.add_argument('--upgrade', dest='upgrade', action='store_true')
     parser.add_argument('--timeout', dest='timeout', action='store')
+    parser.add_argument('--boot-drive', dest='bootdrive', action='store')
 
     args = clean_args(vars(parser.parse_args(rules)))
     parser = None
@@ -167,6 +168,8 @@ def parse_clearpart(rule):
     parser.add_argument('--init_label', dest='init_label', action='store_true')
     parser.add_argument('--linux', dest='linux', action='store_true')
     parser.add_argument('--none', dest='none', action='store_true')
+    parser.add_argument('--initlabel', dest='init_label', action='store_true')
+    parser.add_argument('--list', dest='list', action='store')
 
     args = clean_args(vars(parser.parse_args(rules)))
     parser = None
@@ -340,7 +343,7 @@ def parse_iscsiname(rule):
     parser = argparse.ArgumentParser()
     rules = shlex.split(rule)
     rules.pop(0)
-    parser.add_argument('iqn')
+    #parser.add_argument('iqn')
 
     args = clean_args(vars(parser.parse_args(rules)))
     parser = None
@@ -353,7 +356,7 @@ def parse_keyboard(rule):
     '''
     parser = argparse.ArgumentParser()
     rules = shlex.split(rule)
-    rules.pop(0)
+    #rules.pop(0)
     parser.add_argument('--vckeymap', dest='vckeymap', action='store')
     parser.add_argument('--xlayouts', dest='xlayouts', action='store')
     parser.add_argument('--switch', dest='switch', action='store')
@@ -404,6 +407,7 @@ def parse_logvol(rule):
     parser.add_argument('--name', dest='name', action='store')
     parser.add_argument('--vgname', dest='vgname', action='store')
     parser.add_argument('--size', dest='size', action='store')
+    parser.add_argument('--label', dest='label', action='store')
 
     args = clean_args(vars(parser.parse_args(rules)))
     parser = None
@@ -488,6 +492,7 @@ def parse_network(rule):
     parser.add_argument('--mtu', dest='mtu', action='store')
     parser.add_argument('--noipv4', dest='noipv4', action='store_true')
     parser.add_argument('--noipv6', dest='noipv6', action='store_true')
+    parser.add_argument('--activate', dest='activate', action='store_true')
 
     args = clean_args(vars(parser.parse_args(rules)))
     parser = None
@@ -713,6 +718,7 @@ def parse_timezone(rule):
     parser.add_argument('--utc', dest='utc', action='store_true')
     parser.add_argument('--nontp', dest='nontp', action='store_true')
     parser.add_argument('--ntpservers', dest='ntpservers', action='store')
+    parser.add_argument('--isUtc', dest='isutc', action='store_true')
     parser.add_argument('timezone')
 
     args = clean_args(vars(parser.parse_args(rules)))
@@ -1102,7 +1108,7 @@ f.close()
 sls[ks_opts['lang']['lang']] = {'locale': ['system']}
 
 # Set keyboard
-sls[ks_opts['keyboard']['keyboard']] = {'keyboard': ['system']}
+sls[ks_opts['keyboard']['xlayouts']] = {'keyboard': ['system']}
 
 # Set timezone
 sls[ks_opts['timezone']['timezone']] = {'timezone': ['system']}
@@ -1112,30 +1118,31 @@ if 'utc' in ks_opts['timezone'].keys():
 # Set network
 if 'network' in ks_opts.keys():
     for interface in ks_opts['network']:
-        device = interface['device']
-        del interface['device']
-        sls[device] = {'proto': interface['bootproto']}
-        del interface['bootproto']
+        device = interface.get('device', None)
+        if device is not None:
+            del interface['device']
+            sls[device] = {'proto': interface['bootproto']}
+            del interface['bootproto']
 
-        if 'onboot' in interface.keys():
-            if 'no' in interface['onboot']:
-                sls[device]['enabled'] = False
-            else:
-                sls[device]['enabled'] = True
-            del interface['onboot']
+            if 'onboot' in interface.keys():
+                if 'no' in interface['onboot']:
+                    sls[device]['enabled'] = False
+                else:
+                    sls[device]['enabled'] = True
+                del interface['onboot']
 
-        if 'noipv4' in interface.keys():
-            sls[device]['ipv4'] = {'enabled': False}
-            del interface['noipv4']
-        if 'noipv6' in interface.keys():
-            sls[device]['ipv6'] = {'enabled': False}
-            del interface['noipv6']
+            if 'noipv4' in interface.keys():
+                sls[device]['ipv4'] = {'enabled': False}
+                del interface['noipv4']
+            if 'noipv6' in interface.keys():
+                sls[device]['ipv6'] = {'enabled': False}
+                del interface['noipv6']
 
-        for option in interface.keys():
-            if type(interface[option]) is bool:
-                sls[device][option] = {'enabled': [interface[option]]}
-            else:
-                sls[device][option] = interface[option]
+            for option in interface.keys():
+                if type(interface[option]) is bool:
+                    sls[device][option] = {'enabled': [interface[option]]}
+                else:
+                    sls[device][option] = interface[option]
 
 # Set selinux
 if 'selinux' in ks_opts.keys():
@@ -1148,7 +1155,9 @@ if not 'nobase' in ks_opts['packages']['options']:
 
 packages = ks_opts['packages']['packages']
 for package in packages:
-    if packages[package] is True:
+    if not packages[package]:
+        continue
+    if package and packages[package] is True:
         if package.startswith('@'):
             pkg_group = package.replace('@', '', 1)
             sls[pkg_group] = {'pkg_group': ['installed']}
